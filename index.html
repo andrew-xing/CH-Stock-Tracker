@@ -230,6 +230,11 @@ input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
     <div class="fchip" data-r="Asia">Asia</div>
     <div class="fchip" data-r="Europe">Europe</div>
   </div>
+  <div style="margin-bottom:14px">
+    <select id="f-store" style="width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);padding:10px 14px;font-family:var(--font);font-size:13px;font-weight:300;appearance:none;-webkit-appearance:none;border-radius:4px;cursor:pointer">
+      <option value="all">All Stores</option>
+    </select>
+  </div>
   <div id="f-list"><div class="ld"></div></div>
 </div>
 
@@ -242,9 +247,9 @@ var sb=window.supabase.createClient(SB_URL,SB_KEY);
 var TBL='ch_stock_reports';
 
 var STORES={
-  Americas:["Aspen","Honolulu","LV — Caesars","LV — Fontainebleau","LV — Wynn","LA — Robertson Blvd","Malibu","Miami","NY — Madison Ave","NY — Washington St","St. Barth"],
-  Asia:["Beijing — Yintai","Chengdu — SKP","Guangzhou","Hangzhou","HK — Peninsula","HK — Prince's Bldg","Nagoya","Osaka","Seoul — Cheongdam","Seoul — Shinsegae","Shanghai — Reel","Singapore","Taipei","Tokyo — Aoyama","Tokyo — Ginza","Tokyo — Shinjuku","Tokyo — Roppongi"],
-  Europe:["London — Mount St","London — Selfridges","Manchester","Paris"]
+  Americas:["Aspen","Honolulu","LV — Caesars","LV — Fontainebleau","LV — Wynn","LA — Robertson Blvd","Malibu","Miami","NY — West Village","NY — Madison Ave","St. Barth"],
+  Asia:["Beijing — Yintai","Chengdu — Yintai in99","Hangzhou — H18","HK — Central","HK — TST Peninsula","Taipei — Chung Shan","Taipei — Da'an","Tokyo — Aoyama","Tokyo — Harajuku","Tokyo — Ginza","Tokyo — Shinjuku","Osaka — Shinsaibashi","Osaka — Umeda","Kobe","Nagoya","Fukuoka — Daimyo","Fukuoka — Tenjin","Seoul — Cheongdam","Seoul — Shinsegae Main","Busan — Shinsegae Centum"],
+  Europe:["London — Mount Row","London — Selfridges","Manchester — Selfridges","Paris — Ave Montaigne","Cannes — Palm Beach"]
 };
 var MATS=[
   {key:'silver_925',label:'Silver 925'},
@@ -253,7 +258,7 @@ var MATS=[
 ];
 var CATS=['Pendant','Necklace','Chain','Bracelet','Ring','Earring'];
 
-var S={mats:{},app:{tops:false,pants:false,bags:false,eyewear:false},feed:[],filter:'all',busy:false};
+var S={mats:{},app:{tops:false,pants:false,bags:false,eyewear:false},feed:[],filter:'all',storeFilter:'all',busy:false};
 MATS.forEach(function(m){S.mats[m.key]={level:null,cats:[]};});
 
 (function(){
@@ -385,14 +390,38 @@ function initFeedFilters(){
   for(var i=0;i<chips.length;i++){
     chips[i].addEventListener('click',function(){
       var a=document.querySelectorAll('.fchip');for(var j=0;j<a.length;j++)a[j].classList.remove('on');
-      this.classList.add('on');S.filter=this.dataset.r;renderFeed();
+      this.classList.add('on');S.filter=this.dataset.r;
+      populateStoreFilter();
+      renderFeed();
     });
   }
+  // Store dropdown
+  var sd=document.getElementById('f-store');
+  sd.addEventListener('change',function(){S.storeFilter=this.value;renderFeed();});
+  populateStoreFilter();
+}
+
+function populateStoreFilter(){
+  var sd=document.getElementById('f-store');
+  sd.innerHTML='<option value="all">All Stores</option>';
+  var stores=[];
+  if(S.filter==='all'){
+    Object.keys(STORES).forEach(function(r){stores=stores.concat(STORES[r]);});
+  }else if(STORES[S.filter]){
+    stores=STORES[S.filter];
+  }
+  stores.forEach(function(s){
+    var o=document.createElement('option');o.value=s;o.textContent=s;sd.appendChild(o);
+  });
+  S.storeFilter='all';
+  sd.value='all';
 }
 
 function renderFeed(){
   var list=document.getElementById('f-list'),cnt=document.getElementById('f-cnt');
-  var data=S.filter==='all'?S.feed:S.feed.filter(function(r){return r.region===S.filter;});
+  var data=S.feed;
+  if(S.filter!=='all') data=data.filter(function(r){return r.region===S.filter;});
+  if(S.storeFilter!=='all') data=data.filter(function(r){return r.store_name===S.storeFilter;});
   cnt.textContent=data.length+' report'+(data.length!==1?'s':'');
   if(!data.length){list.innerHTML='<div class="empty"><div class="eic">✦</div><p>No reports yet</p></div>';return;}
   var html='';
