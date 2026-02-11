@@ -206,6 +206,8 @@ input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
       <div class="tg" data-k="pants"><span class="ti">👖</span><span class="tl">Pants</span></div>
       <div class="tg" data-k="bags"><span class="ti">👜</span><span class="tl">Bags</span></div>
       <div class="tg" data-k="eyewear"><span class="ti">🕶</span><span class="tl">Eyewear</span></div>
+      <div class="tg" data-k="hats"><span class="ti">🧢</span><span class="tl">Hats</span></div>
+      <div class="tg" data-k="shoes"><span class="ti">👟</span><span class="tl">Shoes</span></div>
     </div>
   </div>
 
@@ -258,7 +260,7 @@ var MATS=[
 ];
 var CATS=['Pendant','Necklace','Chain','Bracelet','Ring','Earring'];
 
-var S={mats:{},app:{tops:false,pants:false,bags:false,eyewear:false},feed:[],filter:'all',storeFilter:'all',busy:false};
+var S={mats:{},app:{tops:false,pants:false,bags:false,eyewear:false,hats:false,shoes:false},feed:[],filter:'all',storeFilter:'all',busy:false};
 MATS.forEach(function(m){S.mats[m.key]={level:null,cats:[]};});
 
 (function(){
@@ -347,7 +349,7 @@ function initSubmit(){
       silver_925_level:S.mats.silver_925.level||'N/A',silver_925_categories:S.mats.silver_925.cats,
       gold_22k_level:S.mats.gold_22k.level||'N/A',gold_22k_categories:S.mats.gold_22k.cats,
       gold_18k_wg_level:S.mats.gold_18k_wg.level||'N/A',gold_18k_wg_categories:S.mats.gold_18k_wg.cats,
-      has_tops:S.app.tops,has_pants:S.app.pants,has_bags:S.app.bags,has_eyewear:S.app.eyewear,
+      has_tops:S.app.tops,has_pants:S.app.pants,has_bags:S.app.bags,has_eyewear:S.app.eyewear,has_hats:S.app.hats,has_shoes:S.app.shoes,
       comment:document.getElementById('inp-note').value.trim()
     };
     S.busy=true;btn.disabled=true;btn.textContent='SUBMITTING...';
@@ -372,7 +374,7 @@ function resetForm(){
     var b=blocks[i].querySelectorAll('.lv');for(var j=0;j<b.length;j++)b[j].className='lv';
     var c=blocks[i].querySelectorAll('.cc');for(var k=0;k<c.length;k++)c[k].classList.remove('sel');
   }
-  S.app={tops:false,pants:false,bags:false,eyewear:false};
+  S.app={tops:false,pants:false,bags:false,eyewear:false,hats:false,shoes:false};
   var tgs=document.querySelectorAll('#tg-wrap .tg');for(var i=0;i<tgs.length;i++)tgs[i].classList.remove('on');
   document.getElementById('inp-note').value='';initDateTime();
 }
@@ -434,7 +436,7 @@ function renderFeed(){
       if(ms[m].cs&&ms[m].cs.length){mhtml+='<div class="fcats">';for(var c=0;c<ms[m].cs.length;c++)mhtml+='<span class="fcat">'+ms[m].cs[c]+'</span>';mhtml+='</div>';}
       mhtml+='</div>';
     }
-    var icons=[];if(r.has_tops)icons.push('👕');if(r.has_pants)icons.push('👖');if(r.has_bags)icons.push('👜');if(r.has_eyewear)icons.push('🕶');
+    var icons=[];if(r.has_tops)icons.push('👕');if(r.has_pants)icons.push('👖');if(r.has_bags)icons.push('👜');if(r.has_eyewear)icons.push('🕶');if(r.has_hats)icons.push('🧢');if(r.has_shoes)icons.push('👟');
     var ds='',ts=r.report_time||'';
     if(r.report_date){var dt=new Date(r.report_date+'T00:00:00');ds=dt.toLocaleDateString('en-US',{month:'short',day:'numeric'});}
     var ago='';
