@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <style>
 :root{
   --bg:#000;--card:#0a0a0a;--card2:#111;--border:#1c1c1c;--border-h:#333;
@@ -150,6 +151,21 @@ input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
 
+/* ══════ DASHBOARD ══════ */
+.dash-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ds-card{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:16px;text-align:center}
+.ds-num{font-family:var(--mono);font-size:24px;color:var(--white);letter-spacing:1px}
+.ds-lbl{font-family:var(--mono);font-size:8px;letter-spacing:2px;text-transform:uppercase;color:var(--dim);margin-top:4px}
+
+/* ══════ ALERTS ══════ */
+.alert-desc{font-size:13px;font-weight:300;color:var(--dim);line-height:1.6;margin-top:-4px}
+.alert-chips{display:flex;gap:6px;flex-wrap:wrap}
+.alert-sub{background:var(--card);border:1px solid var(--border);border-radius:4px;padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+.alert-sub-info{font-family:var(--mono);font-size:9px;color:var(--text);letter-spacing:.5px}
+.alert-sub-info span{color:var(--dim)}
+.alert-unsub{background:none;border:1px solid var(--border);color:var(--red);padding:4px 10px;font-family:var(--mono);font-size:8px;letter-spacing:1px;cursor:pointer;border-radius:3px;transition:all .2s}
+.alert-unsub:hover{border-color:var(--red)}
+
 @media(max-width:380px){
   .hdr-name{font-size:18px}
   .mat-nm{font-size:12px}
@@ -173,6 +189,8 @@ input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
 <div class="tabs">
   <div class="tab on" data-t="submit">Submit</div>
   <div class="tab" data-t="feed">Feed</div>
+  <div class="tab" data-t="dash">Analytics</div>
+  <div class="tab" data-t="alerts">Alerts</div>
 </div>
 
 <!-- ══════ SUBMIT ══════ -->
@@ -240,6 +258,73 @@ input[type="time"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.
   <div id="f-list"><div class="ld"></div></div>
 </div>
 
+<!-- ══════ DASHBOARD ══════ -->
+<div class="pnl" id="p-dash">
+  <div class="sec">
+    <div class="sec-lbl">Overview</div>
+    <div class="dash-stats" id="dash-stats"></div>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Reports by Store</div>
+    <canvas id="chart-stores" height="280"></canvas>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Reports by Day of Week</div>
+    <canvas id="chart-days" height="200"></canvas>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Stock Levels — Silver 925</div>
+    <canvas id="chart-levels" height="200"></canvas>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Category Frequency</div>
+    <canvas id="chart-cats" height="200"></canvas>
+  </div>
+</div>
+
+<!-- ══════ ALERTS ══════ -->
+<div class="pnl" id="p-alerts">
+  <div class="sec">
+    <div class="sec-lbl">Subscribe to Alerts</div>
+    <p class="alert-desc">Get notified by email when new stock reports match your criteria.</p>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Email</div>
+    <input type="email" class="tx" id="alert-email" placeholder="your@email.com">
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Region</div>
+    <div class="sw"><select id="alert-reg"></select></div>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Store (optional)</div>
+    <div class="sw"><select id="alert-sto"></select></div>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Material</div>
+    <div class="alert-chips" id="alert-mats">
+      <div class="fchip on" data-v="all">All</div>
+      <div class="fchip" data-v="silver_925">Silver 925</div>
+      <div class="fchip" data-v="gold_22k">22K Gold</div>
+      <div class="fchip" data-v="gold_18k_wg">18K WG</div>
+    </div>
+  </div>
+  <div class="sec">
+    <div class="sec-lbl">Notify When</div>
+    <div class="alert-chips" id="alert-lvls">
+      <div class="fchip on" data-v="any">Any Report</div>
+      <div class="fchip" data-v="GOOD">In Stock (GOOD)</div>
+      <div class="fchip" data-v="LOW">Low Stock</div>
+    </div>
+  </div>
+  <div class="divider">✦</div>
+  <button class="sub" id="btn-alert">Subscribe</button>
+  <div class="sec" style="margin-top:24px">
+    <div class="sec-lbl">Your Subscriptions</div>
+    <div id="alert-list"><div class="empty"><div class="eic">✦</div><p>Enter email above to view</p></div></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -264,7 +349,7 @@ var S={mats:{},app:{tops:false,pants:false,bags:false,eyewear:false,hats:false,s
 MATS.forEach(function(m){S.mats[m.key]={level:null,cats:[]};});
 
 (function(){
-  initRegion();initDateTime();initMaterials();initTabs();initApparel();initSubmit();initFeedFilters();
+  initRegion();initDateTime();initMaterials();initTabs();initApparel();initSubmit();initFeedFilters();initAlerts();
   document.getElementById('btn-ref').onclick=loadFeed;
 })();
 
@@ -327,6 +412,7 @@ function initTabs(){
       var p=document.querySelectorAll('.pnl');for(var k=0;k<p.length;k++)p[k].classList.remove('on');
       this.classList.add('on');document.getElementById('p-'+this.dataset.t).classList.add('on');
       if(this.dataset.t==='feed')loadFeed();
+      if(this.dataset.t==='dash')loadDashboard();
     });
   }
 }
@@ -457,6 +543,178 @@ function toast(msg,err){
   var t=document.getElementById('toast');t.textContent=msg;t.className='toast'+(err?' te':'');
   requestAnimationFrame(function(){t.classList.add('show');});
   setTimeout(function(){t.classList.remove('show');},2200);
+}
+
+/* ══════ DASHBOARD ══════ */
+var charts={};
+async function loadDashboard(){
+  if(!S.feed.length){
+    try{
+      var res=await sb.from(TBL).select('*').order('created_at',{ascending:false}).limit(500);
+      if(res.error)throw res.error;S.feed=res.data||[];
+    }catch(e){return;}
+  }
+  renderDashStats();renderChartStores();renderChartDays();renderChartLevels();renderChartCats();
+}
+
+function renderDashStats(){
+  var d=S.feed,stores={},regions={};
+  d.forEach(function(r){stores[r.store_name]=1;regions[r.region]=1;});
+  var today=new Date().toISOString().slice(0,10);
+  var todayCount=d.filter(function(r){return r.report_date===today;}).length;
+  var html='<div class="ds-card"><div class="ds-num">'+d.length+'</div><div class="ds-lbl">Total Reports</div></div>';
+  html+='<div class="ds-card"><div class="ds-num">'+Object.keys(stores).length+'</div><div class="ds-lbl">Stores Covered</div></div>';
+  html+='<div class="ds-card"><div class="ds-num">'+todayCount+'</div><div class="ds-lbl">Today</div></div>';
+  html+='<div class="ds-card"><div class="ds-num">'+Object.keys(regions).length+'</div><div class="ds-lbl">Regions</div></div>';
+  document.getElementById('dash-stats').innerHTML=html;
+}
+
+function chartColors(n){
+  var base=['#c0c0c0','#2bce4e','#d4a520','#d93636','#4a9eff','#ff6b9d','#8b5cf6','#f59e0b','#10b981','#ef4444','#6366f1','#ec4899','#14b8a6','#f97316','#8b5cf6','#06b6d4','#84cc16','#e11d48','#7c3aed','#0ea5e9'];
+  var c=[];for(var i=0;i<n;i++)c.push(base[i%base.length]);return c;
+}
+
+function makeChart(id,type,labels,data,opts){
+  if(charts[id]){charts[id].destroy();}
+  var ctx=document.getElementById(id).getContext('2d');
+  var colors=chartColors(labels.length);
+  var cfg={type:type,data:{labels:labels,datasets:[{data:data,backgroundColor:type==='bar'?colors[0]:colors,borderColor:type==='bar'?colors[0]:colors,borderWidth:type==='line'?2:1,pointRadius:type==='line'?3:0,tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:true,plugins:{legend:{display:type==='doughnut',labels:{color:'#aaa',font:{family:'JetBrains Mono',size:9}}},tooltip:{titleFont:{family:'JetBrains Mono',size:10},bodyFont:{family:'Inter',size:12}}},
+    scales:type==='doughnut'?{}:{x:{ticks:{color:'#555',font:{family:'JetBrains Mono',size:8},maxRotation:45},grid:{color:'#1c1c1c'}},y:{ticks:{color:'#555',font:{family:'JetBrains Mono',size:9}},grid:{color:'#1c1c1c'},beginAtZero:true}}}};
+  if(opts)Object.assign(cfg.options,opts);
+  charts[id]=new Chart(ctx,cfg);
+}
+
+function renderChartStores(){
+  var counts={};S.feed.forEach(function(r){counts[r.store_name]=(counts[r.store_name]||0)+1;});
+  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];}).slice(0,15);
+  var labels=sorted.map(function(e){return e[0].replace(/ — /g,' ');});
+  var data=sorted.map(function(e){return e[1];});
+  makeChart('chart-stores','bar',labels,data);
+}
+
+function renderChartDays(){
+  var days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var counts=[0,0,0,0,0,0,0];
+  S.feed.forEach(function(r){if(r.report_date){var d=new Date(r.report_date+'T12:00:00');counts[d.getDay()]++;}});
+  makeChart('chart-days','bar',days,counts);
+}
+
+function renderChartLevels(){
+  var counts={OOS:0,LOW:0,GOOD:0};
+  S.feed.forEach(function(r){if(r.silver_925_level&&r.silver_925_level!=='N/A')counts[r.silver_925_level]=(counts[r.silver_925_level]||0)+1;});
+  var labels=Object.keys(counts),data=Object.values(counts);
+  makeChart('chart-levels','doughnut',labels,data);
+}
+
+function renderChartCats(){
+  var counts={};
+  S.feed.forEach(function(r){
+    ['silver_925_categories','gold_22k_categories','gold_18k_wg_categories'].forEach(function(k){
+      if(r[k]&&r[k].length)r[k].forEach(function(c){counts[c]=(counts[c]||0)+1;});
+    });
+  });
+  var sorted=Object.entries(counts).sort(function(a,b){return b[1]-a[1];});
+  var labels=sorted.map(function(e){return e[0];});
+  var data=sorted.map(function(e){return e[1];});
+  makeChart('chart-cats','bar',labels,data);
+}
+
+/* ══════ ALERTS ══════ */
+var SUBS_TBL='ch_subscriptions';
+var alertState={mat:'all',level:'any'};
+
+function initAlerts(){
+  // Region/store selectors
+  var r=document.getElementById('alert-reg'),s=document.getElementById('alert-sto');
+  var oAll=document.createElement('option');oAll.value='all';oAll.textContent='All Regions';r.appendChild(oAll);
+  Object.keys(STORES).forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;r.appendChild(o);});
+  function updAlertStores(){
+    s.innerHTML='<option value="all">All Stores</option>';
+    var stores=r.value==='all'?[].concat.apply([],Object.values(STORES)):STORES[r.value]||[];
+    stores.forEach(function(k){var o=document.createElement('option');o.value=k;o.textContent=k;s.appendChild(o);});
+  }
+  r.onchange=updAlertStores;updAlertStores();
+
+  // Material chips
+  var matChips=document.querySelectorAll('#alert-mats .fchip');
+  for(var i=0;i<matChips.length;i++){
+    matChips[i].addEventListener('click',function(){
+      var a=document.querySelectorAll('#alert-mats .fchip');for(var j=0;j<a.length;j++)a[j].classList.remove('on');
+      this.classList.add('on');alertState.mat=this.dataset.v;
+    });
+  }
+  // Level chips
+  var lvlChips=document.querySelectorAll('#alert-lvls .fchip');
+  for(var i=0;i<lvlChips.length;i++){
+    lvlChips[i].addEventListener('click',function(){
+      var a=document.querySelectorAll('#alert-lvls .fchip');for(var j=0;j<a.length;j++)a[j].classList.remove('on');
+      this.classList.add('on');alertState.level=this.dataset.v;
+    });
+  }
+
+  // Subscribe button
+  document.getElementById('btn-alert').addEventListener('click',async function(){
+    var email=document.getElementById('alert-email').value.trim();
+    if(!email||!email.includes('@')){toast('Please enter a valid email',true);return;}
+    var btn=this;btn.disabled=true;btn.textContent='SUBSCRIBING...';
+    var row={
+      email:email,
+      region:document.getElementById('alert-reg').value,
+      store_name:document.getElementById('alert-sto').value,
+      material_filter:alertState.mat,
+      level_filter:alertState.level,
+      active:true
+    };
+    try{
+      var res=await sb.from(SUBS_TBL).insert([row]);
+      if(res.error)throw res.error;
+      toast('Subscribed! You\'ll get email alerts.');
+      loadAlertSubs(email);
+    }catch(e){
+      toast(e.message||'Subscription failed',true);
+    }finally{
+      btn.disabled=false;btn.className='sub';btn.textContent='SUBSCRIBE';
+    }
+  });
+
+  // Auto-load subs on email blur
+  document.getElementById('alert-email').addEventListener('blur',function(){
+    var email=this.value.trim();
+    if(email&&email.includes('@'))loadAlertSubs(email);
+  });
+}
+
+async function loadAlertSubs(email){
+  var list=document.getElementById('alert-list');
+  list.innerHTML='<div class="ld"></div>';
+  try{
+    var res=await sb.from(SUBS_TBL).select('*').eq('email',email).eq('active',true).order('created_at',{ascending:false});
+    if(res.error)throw res.error;
+    var subs=res.data||[];
+    if(!subs.length){list.innerHTML='<div class="empty"><div class="eic">✦</div><p>No active subscriptions</p></div>';return;}
+    var html='';
+    subs.forEach(function(s){
+      var info=(s.store_name==='all'?(s.region==='all'?'All stores':s.region):s.store_name);
+      info+=' · '+(s.material_filter==='all'?'All materials':s.material_filter);
+      info+=' · '+(s.level_filter==='any'?'Any report':s.level_filter);
+      html+='<div class="alert-sub"><div class="alert-sub-info">'+info+'</div>';
+      html+='<button class="alert-unsub" data-id="'+s.id+'">✕</button></div>';
+    });
+    list.innerHTML=html;
+    // Attach unsub handlers
+    var btns=list.querySelectorAll('.alert-unsub');
+    for(var i=0;i<btns.length;i++){
+      btns[i].addEventListener('click',async function(){
+        var id=this.dataset.id;
+        await sb.from(SUBS_TBL).update({active:false}).eq('id',id);
+        toast('Unsubscribed');
+        loadAlertSubs(email);
+      });
+    }
+  }catch(e){
+    list.innerHTML='<div class="empty"><div class="eic">✦</div><p>'+e.message+'</p></div>';
+  }
 }
 </script>
 </body>
