@@ -382,7 +382,7 @@ function resetForm(){
 async function loadFeed(){
   var list=document.getElementById('f-list');list.innerHTML='<div class="ld"></div>';
   try{
-    var res=await sb.from(TBL).select('*').order('created_at',{ascending:false}).limit(50);
+    var res=await sb.from(TBL).select('*').order('created_at',{ascending:false}).limit(500);
     if(res.error)throw res.error;S.feed=res.data||[];renderFeed();
   }catch(e){list.innerHTML='<div class="empty"><div class="eic">✦</div><p>'+(e.message||'Error')+'</p></div>';}
 }
